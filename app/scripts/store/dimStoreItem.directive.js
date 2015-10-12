@@ -6,9 +6,9 @@
   angular.module('dimApp')
     .directive('dimStoreItem', StoreItem);
 
-  StoreItem.$inject = ['dimStoreService', 'ngDialog', 'dimLoadoutService'];
+  StoreItem.$inject = ['dimStoreService', 'ngDialog', 'dimLoadoutService', '$http'];
 
-  function StoreItem(dimStoreService, ngDialog, dimLoadoutService) {
+  function StoreItem(dimStoreService, ngDialog, dimLoadoutService, $http) {
     return {
       bindToController: true,
       controller: StoreItemCtrl,
@@ -48,6 +48,7 @@
       //   watchers = void 0;
       // });
 
+      /*
       $('<img/>').attr('src', 'http://www.bungie.net' + vm.item.icon).load(function() {
         $(this).remove();
         element[0].querySelector('.img')
@@ -57,6 +58,38 @@
         element[0].querySelector('.img')
           .style.backgroundImage = 'url(' + chrome.extension.getURL(vm.item.icon) + ')';
       });
+      */
+
+      // load image V2
+      function convertImgToBase64(url, callback, outputFormat){
+      	var img = new Image();
+      	img.crossOrigin = 'Anonymous';
+      	img.onload = function(){
+      	    var canvas = document.createElement('CANVAS');
+      	    var ctx = canvas.getContext('2d');
+      		canvas.height = this.height;
+      		canvas.width = this.width;
+      	  	ctx.drawImage(this,0,0);
+      	  	var dataURL = canvas.toDataURL(outputFormat || 'image/jpeg');
+      	  	callback(dataURL);
+      	  	canvas = null;
+      	};
+      	img.src = url;
+      }
+
+      var icon = localStorage[vm.item.id];
+      if (icon) {
+        var img = element[0].querySelector('.img');
+        img.style.backgroundImage = 'url(' + icon + ')';
+      }
+      // we don't have the cache, load it from bungie and then store it
+      else {
+        convertImgToBase64('http://www.bungie.net' + vm.item.icon, function(data) {
+          var img = element[0].querySelector('.img');
+          img.style.backgroundImage = 'url(' + data + ')';
+          localStorage[vm.item.id] = data;
+        });
+      }
 
       vm.clicked = function openPopup(item, e) {
         e.stopPropagation();
